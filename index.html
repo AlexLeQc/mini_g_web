@@ -41,24 +41,20 @@
                 <h2>Game Rules</h2>
                 <div class="rules-content">
                     <p><strong>Welcome to Mini Golf!</strong></p>
-                    <p>🎯 <strong>Objective:</strong> Get the ball in the hole with the fewest strokes</p>
+                    <p>🎯 <strong>Objective:</strong> Get the ball in the hole with the fewest strokes possible</p>
+
                     <p>🎮 <strong>Controls:</strong></p>
                     <ul>
-                        <li>Click/Touch and drag to aim</li>
-                        <li>Adjust power with the slider</li>
-                        <li>Click SHOOT or press Spacebar to hit</li>
+                        <li><strong>Aiming:</strong> Click and hold to show aiming line</li>
+                        <li><strong>Power:</strong> Distance from mouse to ball = shot power</li>
+                        <li><strong>Shoot:</strong> Release the mouse button to hit the ball</li>
                     </ul>
+
                     <p>⛳ <strong>Scoring:</strong></p>
                     <ul>
                         <li>Each shot counts as 1 stroke</li>
-                        <li>Try to match or beat Par</li>
-                        <li>Best scores are saved</li>
-                    </ul>
-                    <p>🏖️ <strong>Surfaces:</strong></p>
-                    <ul>
-                        <li><em>Green:</em> Normal friction</li>
-                        <li><em>Sand:</em> Higher friction (slower)</li>
-                        <li><em>Ice:</em> Lower friction (faster/farther)</li>
+                        <li>Try to match or beat the Par for each level</li>
+                        <li>Your best scores are automatically saved</li>
                     </ul>
                 </div>
                 <button id="back-from-rules-btn" class="menu-btn">Back to Menu</button>
@@ -75,23 +71,12 @@
         </div>
 
         <div id="game-ui" class="hidden">
-            <div id="controls">
-                <div class="control-group">
-                    <label>Power: <span id="power-value">50</span></label>
-                    <input type="range" id="power-slider" min="0" max="100" value="50">
-                </div>
-                <div class="control-group">
-                    <button id="shoot-btn" class="shoot-btn">SHOOT!</button>
-                </div>
-            </div>
-
+            <button id="pause-btn" class="pause-btn">⏸ Pause</button>
             <div id="game-info">
                 <div>Level: <span id="current-level">1</span></div>
                 <div>Strokes: <span id="stroke-count">0</span></div>
                 <div>Par: <span id="par-count">3</span></div>
             </div>
-
-            <button id="pause-btn" class="pause-btn">⏸ Pause</button>
         </div>
 
         <div id="level-complete" class="screen-overlay hidden">
@@ -103,9 +88,9 @@
                     <strong>Score:</strong> <span id="level-score" class="score-display">0</span>
                 </p>
                 <div class="complete-buttons">
-                    <button id="next-level-btn" class="menu-btn">Next Level ➜</button>
-                    <button id="retry-level-btn" class="menu-btn">↻ Retry</button>
-                    <button id="back-to-levels-btn" class="menu-btn">← Level Select</button>
+                    <button id="next-level-btn" class="menu-btn">Next Level</button>
+                    <button id="retry-level-btn" class="menu-btn">Retry</button>
+                    <button id="back-to-levels-btn" class="menu-btn">Level Select</button>
                 </div>
             </div>
         </div>
@@ -115,8 +100,8 @@
             <div class="screen-content">
                 <h2>⏸ Game Paused</h2>
                 <button id="resume-btn" class="menu-btn">▶ Resume Game</button>
-                <button id="restart-level-btn" class="menu-btn">🔄 Restart Level</button>
-                <button id="back-to-main-btn" class="menu-btn">🏠 Main Menu</button>
+                <button id="restart-level-btn" class="menu-btn">Restart Level</button>
+                <button id="back-to-main-btn" class="menu-btn">Main Menu</button>
             </div>
         </div>
     </div>

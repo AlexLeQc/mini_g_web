@@ -23,6 +23,10 @@ body {
     justify-content: center;
     align-items: center;
     background: #1a1a1a;
+    background-image: url('../assets/images/menu/Graphic/cloud.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     overflow: hidden;
 }
 
@@ -76,14 +80,14 @@ body {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
-/* Style pour le menu pause avec BeauFond3.png */
-#pause-menu.screen-overlay {
-    background: url('../assets/images/menu/Graphic/BeauFond3.png') no-repeat center center;
-    background-size: cover;
-    background-attachment: fixed;
+#pause-menu .screen-content {
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
-#pause-menu .screen-content {
+#level-complete .screen-content {
     background: rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -286,6 +290,9 @@ h2 {
     z-index: 100;
     /* UI stays at screen coordinates, not scaled with canvas */
     transform: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 #game-ui.hidden {
@@ -317,6 +324,7 @@ h2 {
     border-radius: 4px;
     background: #4a7c59;
     outline: none;
+    appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
 }
@@ -376,16 +384,15 @@ h2 {
 }
 
 .pause-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
     background: rgba(0, 0, 0, 0.7);
     border: 2px solid #4a7c59;
     color: white;
-    padding: 10px 15px;
+    padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 1.2em;
+    font-size: 1em;
+    margin-bottom: 10px;
+    align-self: center;
     transition: all 0.3s ease;
     /* UI stays at screen coordinates, not scaled with canvas */
     transform: none !important;

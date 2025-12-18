@@ -109,7 +109,7 @@ class Terrain {
     getFriction() {
         switch(this.surfaceType) {
             case 'sand': return 0.95;
-            case 'ice': return 0.995;
+            case 'ice': return 0.99;
             default: return 0.98;
         }
     }

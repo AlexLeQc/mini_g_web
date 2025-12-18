@@ -88,14 +88,6 @@ class Game {
         this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
         this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
 
-        // UI controls
-        document.getElementById('power-slider').addEventListener('input', (e) => {
-            this.power = parseInt(e.target.value);
-            document.getElementById('power-value').textContent = this.power;
-        });
-
-        document.getElementById('shoot-btn').addEventListener('click', () => this.shoot());
-
         // Window resize
         window.addEventListener('resize', () => this.resizeCanvas());
     }

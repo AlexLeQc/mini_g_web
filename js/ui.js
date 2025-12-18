@@ -2,7 +2,6 @@ class UIManager {
     constructor(game) {
         this.game = game;
         this.currentScreen = 'title';
-        this.previousState = null; // Pour mémoriser l'état avant pause
         this.setupEventListeners();
         this.updateScoreboard();
     }
@@ -278,8 +277,7 @@ class UIManager {
     }
 
     pauseGame() {
-        if (this.game.state === 'PLAYING' || this.game.state === 'AIMING' || this.game.state === 'SHOOTING') {
-            this.previousState = this.game.state; // Mémoriser l'état actuel
+        if (this.game.state === 'PLAYING' || this.game.state === 'AIMING') {
             this.game.state = 'PAUSED';
             this.showPauseMenu();
         }
@@ -287,8 +285,7 @@ class UIManager {
 
     resumeGame() {
         if (this.game.state === 'PAUSED') {
-            this.game.state = this.previousState || 'AIMING'; // Restaurer l'état précédent
-            this.previousState = null; // Réinitialiser
+            this.game.state = 'AIMING';
             this.hideAllScreens();
             document.getElementById('game-ui').classList.remove('hidden');
             this.currentScreen = 'playing';
