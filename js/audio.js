@@ -26,6 +26,8 @@ class AudioManager {
             hole: 'assets/audio/BIRDIE.wav',
             button: 'assets/audio/BoutonNormal.mp3',
             buttontitle: 'assets/audio/ButtonTitreEffect.mp3',
+            pourris: 'assets/audio/Pourris.wav',
+            tunconnard: 'assets/audio/tUnConnard.wav',
         };
     }
 

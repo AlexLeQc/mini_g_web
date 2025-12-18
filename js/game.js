@@ -194,6 +194,15 @@ class Game {
         this.strokeCount++;
         this.updateUI();
 
+        // Jouer un son moqueur quand on atteint le par sans avoir fini le trou
+        if (this.strokeCount === this.parCount && this.state !== 'LEVEL_COMPLETE') {
+            // Sélection aléatoire entre les deux sons moqueurs
+            const mockSounds = ['pourris', 'tunconnard'];
+            const randomIndex = Math.floor(Math.random() * mockSounds.length);
+            const mockSound = mockSounds[randomIndex];
+            AudioManager.playSound(mockSound);
+        }
+
         AudioManager.playSound('ball');
 
         this.state = 'SHOOTING';
