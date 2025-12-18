@@ -237,7 +237,7 @@ class Game {
         const dy = this.ball.y - this.terrain.hole.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        return distance < (this.terrain.hole.radius - this.ball.radius);
+        return distance < (this.terrain.hole.radius - this.ball.radius/2);
     }
 
     levelComplete() {
