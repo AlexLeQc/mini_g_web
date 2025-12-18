@@ -2,13 +2,14 @@ class UIManager {
     constructor(game) {
         this.game = game;
         this.currentScreen = 'title';
+        this.previousState = null;
         this.setupEventListeners();
         this.updateScoreboard();
     }
 
     setupEventListeners() {
         document.getElementById('press-start-btn').addEventListener('click', () => {
-            AudioManager.playSound('buttonTitle');
+            AudioManager.playSound('buttontitle');
             this.showMainMenu();
         });
 
@@ -277,7 +278,8 @@ class UIManager {
     }
 
     pauseGame() {
-        if (this.game.state === 'PLAYING' || this.game.state === 'AIMING') {
+        if (this.game.state === 'PLAYING' || this.game.state === 'AIMING' || this.game.state === 'SHOOTING') {
+            this.previousState = this.game.state;
             this.game.state = 'PAUSED';
             this.showPauseMenu();
         }
@@ -285,7 +287,8 @@ class UIManager {
 
     resumeGame() {
         if (this.game.state === 'PAUSED') {
-            this.game.state = 'AIMING';
+            this.game.state = this.previousState || 'AIMING';
+            this.previousState = null;
             this.hideAllScreens();
             document.getElementById('game-ui').classList.remove('hidden');
             this.currentScreen = 'playing';

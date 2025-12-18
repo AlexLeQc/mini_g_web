@@ -1,22 +1,13 @@
-// Mini Golf HTML5 Game - Main Game Logic
-// Based on the Qt C++ version with the same physics and levels
-
 class Game {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
-
-        // Game state
-        this.state = 'MENU'; // MENU, PLAYING, AIMING, SHOOTING, LEVEL_COMPLETE
+        this.state = 'MENU';
         this.currentLevel = 0;
         this.strokeCount = 0;
         this.parCount = 3;
-
-        // Physics constants (top-down view - no gravity)
         this.friction = 0.98;
         this.bounceDamping = 0.8;
-
-        // Game objects
         this.ball = null;
         this.terrain = null;
         this.aimLine = { startX: 0, startY: 0, endX: 0, endY: 0, visible: false };
