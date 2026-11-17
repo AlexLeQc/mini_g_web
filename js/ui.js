@@ -79,6 +79,18 @@ class UIManager {
             this.showMainMenu();
         });
 
+        document.getElementById('audio-gate').addEventListener('click', () => this.dismissAudioGate());
+
+        document.getElementById('course-levels-btn').addEventListener('click', () => {
+            AudioManager.playSound('button');
+            this.showLevelSelect();
+        });
+
+        document.getElementById('course-menu-btn').addEventListener('click', () => {
+            AudioManager.playSound('button');
+            this.showMainMenu();
+        });
+
         this.createLevelButtons();
 
         this.setupKeyboardShortcuts();
@@ -95,7 +107,21 @@ class UIManager {
         document.getElementById('title-screen').classList.remove('hidden');
         document.getElementById('game-ui').classList.add('hidden');
         this.currentScreen = 'title';
-        AudioManager.playMusic('title');
+        AudioManager.playMusic('title').then((played) => {
+            // Browsers block music until the player interacts with the page.
+            // Ask for one click so the title music can actually be heard.
+            if (!played && this.currentScreen === 'title') {
+                document.getElementById('audio-gate').classList.remove('hidden');
+            }
+        });
+    }
+
+    dismissAudioGate() {
+        const gate = document.getElementById('audio-gate');
+        if (gate.classList.contains('hidden')) return false;
+        gate.classList.add('hidden');
+        AudioManager.resumeMusic();
+        return true;
     }
 
     showMainMenu() {
@@ -199,8 +225,36 @@ class UIManager {
     }
 
     showCongratulations() {
-        alert('🎉 Congratulations! You completed all levels!');
-        this.showLevelSelect();
+        const table = document.getElementById('course-scorecard');
+        table.innerHTML = '';
+
+        const addRow = (cells, className, tag = 'td') => {
+            const row = document.createElement('tr');
+            if (className) row.className = className;
+            cells.forEach(text => {
+                const cell = document.createElement(tag);
+                cell.textContent = text;
+                row.appendChild(cell);
+            });
+            table.appendChild(row);
+        };
+
+        addRow(['Hole', 'Par', 'Best'], null, 'th');
+        let totalPar = 0, totalBest = 0, allPlayed = true;
+        getLevelNames().forEach((name, i) => {
+            const par = getLevelData(i).par;
+            const best = this.game.scores[i];
+            totalPar += par;
+            if (best < 999) totalBest += best; else allPlayed = false;
+            const cls = best >= 999 ? null : best < par ? 'under-par' : best === par ? 'par-score' : null;
+            addRow([`${i + 1}. ${name}`, par, best < 999 ? best : '-'], cls);
+        });
+        addRow(['Total', totalPar, allPlayed ? totalBest : '-'], 'total-row');
+
+        this.hideAllScreens();
+        document.getElementById('game-ui').classList.add('hidden');
+        document.getElementById('course-complete').classList.remove('hidden');
+        this.currentScreen = 'course-complete';
     }
 
     updateScoreboard() {
@@ -262,6 +316,9 @@ class UIManager {
         document.getElementById('final-strokes').textContent = strokes;
         document.getElementById('final-par').textContent = par;
         
+        const isLastLevel = this.game.currentLevel >= getTotalLevels() - 1;
+        document.getElementById('next-level-btn').textContent = isLastLevel ? 'Finish Course' : 'Next Level';
+
         const scoreDisplay = document.getElementById('level-score');
         if (score === 0) {
             scoreDisplay.textContent = '⭐ PAR!';
@@ -281,6 +338,8 @@ class UIManager {
         if (this.game.state === 'PLAYING' || this.game.state === 'AIMING' || this.game.state === 'SHOOTING') {
             this.previousState = this.game.state;
             this.game.state = 'PAUSED';
+            // Drop any shot being aimed, otherwise it fires on the next mouse release
+            this.game.cancelAiming();
             this.showPauseMenu();
         }
     }
@@ -292,7 +351,7 @@ class UIManager {
             this.hideAllScreens();
             document.getElementById('game-ui').classList.remove('hidden');
             this.currentScreen = 'playing';
-            this.updateUI();
+            this.updateGameUI();
         }
     }
 
@@ -315,6 +374,7 @@ class UIManager {
                     }
                     break;
                 case 'Enter':
+                    if (this.dismissAudioGate()) break;
                     if (this.currentScreen === 'title') {
                         document.getElementById('press-start-btn').click();
                     }

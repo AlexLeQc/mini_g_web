@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Golf - HTML5 Edition</title>
-    <link rel="icon" type="image/svg+xml" href="assets/images/icone.png" />
+    <link rel="icon" type="image/png" href="assets/images/icone.png" />
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -17,6 +17,11 @@
                 <div class="title-image"></div>
                 <button id="press-start-btn" class="title-btn pulse">Press Start</button>
             </div>
+        </div>
+
+        <!-- Shown only when the browser blocks music until the first click -->
+        <div id="audio-gate" class="screen-overlay hidden">
+            <p class="audio-gate-text">🔊 Click anywhere to start</p>
         </div>
 
         <div id="main-menu" class="screen-overlay hidden">
@@ -72,11 +77,11 @@
         </div>
 
         <div id="game-ui" class="hidden">
-            <button id="pause-btn" class="pause-btn">⏸ Pause</button>
+            <button id="pause-btn" class="pause-btn" title="Pause (Esc)">⏸</button>
             <div id="game-info">
-                <div>Level: <span id="current-level">1</span></div>
-                <div>Strokes: <span id="stroke-count">0</span></div>
-                <div>Par: <span id="par-count">3</span></div>
+                <div>Hole <span id="current-level">1</span></div>
+                <div>Strokes <span id="stroke-count">0</span></div>
+                <div>Par <span id="par-count">3</span></div>
             </div>
         </div>
 
@@ -92,6 +97,18 @@
                     <button id="next-level-btn" class="menu-btn">Next Level</button>
                     <button id="retry-level-btn" class="menu-btn">Retry</button>
                     <button id="back-to-levels-btn" class="menu-btn">Level Select</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="course-complete" class="screen-overlay hidden">
+            <div class="screen-content level-complete-content">
+                <h2>🏆 Course Complete!</h2>
+                <p>You finished every hole. Here are your best scores:</p>
+                <table id="course-scorecard" class="scorecard"></table>
+                <div class="complete-buttons">
+                    <button id="course-levels-btn" class="menu-btn">Level Select</button>
+                    <button id="course-menu-btn" class="menu-btn">Main Menu</button>
                 </div>
             </div>
         </div>

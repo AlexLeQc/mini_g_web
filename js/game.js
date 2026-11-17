@@ -17,13 +17,28 @@ class Game {
         this.effectivePower = 10; // Puissance effective par défaut
         this.isAiming = false;
         this.mousePos = { x: 0, y: 0 };
+        this.lastShotPos = { x: 0, y: 0 };
+        this.accumulator = 0;
 
         // Scores
-        this.scores = JSON.parse(localStorage.getItem('miniGolfScores')) || Array(8).fill(999);
+        this.scores = this.loadScores();
 
         this.init();
         this.setupEventListeners();
         this.gameLoop();
+    }
+
+    loadScores() {
+        const empty = Array(getTotalLevels()).fill(999);
+        try {
+            const saved = JSON.parse(localStorage.getItem('miniGolfScores'));
+            if (Array.isArray(saved)) {
+                return empty.map((v, i) => (typeof saved[i] === 'number' ? saved[i] : v));
+            }
+        } catch (e) {
+            // Corrupted or blocked storage: start with empty scores
+        }
+        return empty;
     }
 
     init() {
@@ -33,8 +48,8 @@ class Game {
         // Initialize UI
         this.updateUI();
 
-        // Load audio
-        AudioManager.init();
+        // Start downloading every level picture now so levels open instantly
+        Terrain.preloadAll(getTotalLevels());
     }
 
     resizeCanvas() {
@@ -66,18 +81,26 @@ class Game {
         this.canvas.style.position = 'absolute';
         this.canvas.style.left = `${offsetX}px`;
         this.canvas.style.top = `${offsetY}px`;
+
+        // Keep the HUD centered at the top of the board (not over the course)
+        const hud = document.getElementById('game-ui');
+        hud.style.left = `${offsetX + scaledWidth / 2}px`;
+        hud.style.top = `${offsetY + 8}px`;
     }
 
     setupEventListeners() {
         // Canvas events
         this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        // Listen on window so dragging outside the canvas keeps aiming,
+        // and releasing the button outside the canvas still shoots.
+        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
 
         // Touch events for mobile
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        this.canvas.addEventListener('touchcancel', () => this.cancelAiming());
 
         // Window resize
         window.addEventListener('resize', () => this.resizeCanvas());
@@ -111,41 +134,39 @@ class Game {
         this.shoot();
     }
 
+    // Touch coordinates are in screen space, same as mouse: reuse the mouse handlers
     handleTouchStart(e) {
         e.preventDefault();
-        const touch = e.touches[0];
-        // Touch coordinates are already in screen space, same as mouse
-        const mouseEvent = new MouseEvent('mousedown', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-        this.canvas.dispatchEvent(mouseEvent);
+        this.handleMouseDown(e.touches[0]);
     }
 
     handleTouchMove(e) {
         e.preventDefault();
-        const touch = e.touches[0];
-        // Touch coordinates are already in screen space, same as mouse
-        const mouseEvent = new MouseEvent('mousemove', {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-        });
-        this.canvas.dispatchEvent(mouseEvent);
+        this.handleMouseMove(e.touches[0]);
     }
 
     handleTouchEnd(e) {
         e.preventDefault();
-        const mouseEvent = new MouseEvent('mouseup');
-        this.canvas.dispatchEvent(mouseEvent);
+        this.handleMouseUp();
     }
 
     startAiming() {
         if (!this.ball || this.ball.isMoving) return;
 
         this.isAiming = true;
+        // Reset the aim so a click without dragging never reuses the previous shot
         this.aimLine.startX = this.ball.x;
         this.aimLine.startY = this.ball.y;
+        this.aimLine.endX = this.ball.x;
+        this.aimLine.endY = this.ball.y;
+        this.aimLine.visible = false;
+        this.effectivePower = 0;
         this.updateAimLine();
+    }
+
+    cancelAiming() {
+        this.isAiming = false;
+        this.aimLine.visible = false;
     }
 
     updateAimLine() {
@@ -182,26 +203,19 @@ class Game {
         const dy = this.aimLine.endY - this.ball.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance > 0) {
-            // Normaliser la direction et appliquer la puissance effective
-            const normalizedDx = dx / distance;
-            const normalizedDy = dy / distance;
+        // A simple click or a tiny accidental drag cancels the shot instead of
+        // wasting a stroke (MIN_AIM_DISTANCE px of drag = minimum shot)
+        const MIN_AIM_DISTANCE = 10;
+        if (distance < MIN_AIM_DISTANCE) return;
 
-            this.ball.vx = normalizedDx * this.effectivePower * 0.5;
-            this.ball.vy = normalizedDy * this.effectivePower * 0.5;
-        }
+        // Normaliser la direction et appliquer la puissance effective
+        this.ball.vx = (dx / distance) * this.effectivePower * 0.5;
+        this.ball.vy = (dy / distance) * this.effectivePower * 0.5;
+        this.ball.isMoving = true;
+        this.lastShotPos = { x: this.ball.x, y: this.ball.y };
 
         this.strokeCount++;
         this.updateUI();
-
-        // Jouer un son moqueur quand on atteint le par sans avoir fini le trou
-        if (this.strokeCount === this.parCount && this.state !== 'LEVEL_COMPLETE') {
-            // Sélection aléatoire entre les deux sons moqueurs
-            const mockSounds = ['pourris', 'tunconnard'];
-            const randomIndex = Math.floor(Math.random() * mockSounds.length);
-            const mockSound = mockSounds[randomIndex];
-            AudioManager.playSound(mockSound);
-        }
 
         AudioManager.playSound('ball');
 
@@ -218,6 +232,8 @@ class Game {
         // Load terrain
         this.terrain = new Terrain(levelIndex);
         this.ball = new Ball(this.terrain.ballStart.x, this.terrain.ballStart.y);
+        this.lastShotPos = { x: this.ball.x, y: this.ball.y };
+        this.cancelAiming();
 
         // Hide menus, show game
         this.hideMenus();
@@ -244,9 +260,13 @@ class Game {
         this.state = 'LEVEL_COMPLETE';
 
         // Save score if better
-        if (this.strokeCount < this.scores[this.currentLevel]) {
+        if (this.strokeCount >= 1 && this.strokeCount < this.scores[this.currentLevel]) {
             this.scores[this.currentLevel] = this.strokeCount;
-            localStorage.setItem('miniGolfScores', JSON.stringify(this.scores));
+            try {
+                localStorage.setItem('miniGolfScores', JSON.stringify(this.scores));
+            } catch (e) {
+                // Storage unavailable (private mode...): keep score for this session only
+            }
         }
 
         AudioManager.playSound('hole');
@@ -257,62 +277,108 @@ class Game {
         }
     }
 
-    gameLoop() {
-        this.update();
-        this.render();
-        requestAnimationFrame(() => this.gameLoop());
+    // Fixed 120 physics updates/second, whatever the monitor refresh rate
+    // (before, physics ran once per screen frame, so the game speed depended
+    // on the monitor). The ball is drawn interpolated between the last two
+    // physics positions, so motion stays smooth on 60, 120 or 144 Hz screens.
+    gameLoop(timestamp) {
+        const STEP = 1000 / 120;
+        let alpha = 1;
+        if (timestamp !== undefined) {
+            if (this.lastFrameTime === undefined) this.lastFrameTime = timestamp;
+            // Clamp so a background tab doesn't simulate minutes of physics at once
+            this.accumulator += Math.min(timestamp - this.lastFrameTime, 250);
+            this.lastFrameTime = timestamp;
+
+            while (this.accumulator >= STEP) {
+                if (this.ball) this.ball.savePrevious();
+                this.update();
+                this.accumulator -= STEP;
+            }
+            alpha = this.accumulator / STEP;
+        }
+        this.render(alpha);
+        requestAnimationFrame((t) => this.gameLoop(t));
     }
 
     update() {
         // Ne rien faire si le jeu est en pause
-        if (this.state === 'PAUSED') {
+        if (this.state !== 'SHOOTING' || !this.ball) {
             return;
         }
 
-        if (this.state === 'SHOOTING' && this.ball) {
-            // Physique simple en temps réel
-            const friction = this.terrain ? this.terrain.getFriction() : this.friction;
-            this.ball.update(friction);
+        const ball = this.ball;
+        const friction = this.terrain ? this.terrain.getFriction() : this.friction;
+        ball.vx *= friction;
+        ball.vy *= friction;
+        ball.isMoving = true;
 
-            // Vérifier les collisions avec les murs
+        // Sub-stepping: never move the ball more than half its radius at once.
+        // Before, at full power the ball moved 10px per frame with an 8px radius,
+        // so it could jump over a wall line in a single frame and escape the map.
+        const speed = Math.hypot(ball.vx, ball.vy);
+        const steps = Math.max(1, Math.ceil(speed / (ball.radius * 0.5)));
+        let impact = 0;
+
+        for (let i = 0; i < steps; i++) {
+            const fromX = ball.x, fromY = ball.y;
+            ball.x += ball.vx / steps;
+            ball.y += ball.vy / steps;
+
             if (this.terrain) {
-                this.terrain.checkCollisions(this.ball, this.bounceDamping);
+                impact = Math.max(impact, this.terrain.checkCollisions(ball, this.bounceDamping));
+
+                // Hard guarantee: the ball's center may never cross a wall line
+                // (e.g. squeezed in a corner between two walls). If it would,
+                // cancel the move and bounce off that wall instead.
+                const crossed = this.terrain.findCrossedWall(fromX, fromY, ball.x, ball.y);
+                if (crossed) {
+                    ball.x = fromX;
+                    ball.y = fromY;
+                    impact = Math.max(impact, this.terrain.bounceOffWall(ball, crossed, this.bounceDamping));
+                }
             }
 
-            // Vérifier si la balle est dans le trou
+            // Checked every sub-step so a fast ball can't "skip" over the hole
             if (this.checkWinCondition()) {
                 this.levelComplete();
                 return;
             }
+        }
 
-            // Vérifier si la balle s'est arrêtée
-            if (Math.abs(this.ball.vx) < 0.1 && Math.abs(this.ball.vy) < 0.1) {
-                this.ball.vx = 0;
-                this.ball.vy = 0;
-                this.ball.isMoving = false;
+        // Only play the bounce sound on a real hit (not when grazing along a wall)
+        if (impact > 0.5) {
+            AudioManager.playSound('ball');
+        }
 
-                if (this.state === 'SHOOTING') {
-                    this.state = 'AIMING';
-                }
-            }
+        // Safety net: if the ball somehow still ends up off the course,
+        // put it back where the last shot was taken from.
+        if (this.terrain && !this.terrain.isInsideCourse(ball.x, ball.y)) {
+            ball.reset(this.lastShotPos.x, this.lastShotPos.y);
+            this.onBallStopped();
+            return;
+        }
 
-            // COLLISION STUCK PREVENTION: If ball has very low velocity but is still moving,
-            // it might be stuck - force it to stop
-            const speed = Math.sqrt(this.ball.vx * this.ball.vx + this.ball.vy * this.ball.vy);
-            if (speed > 0 && speed < 0.3 && this.ball.isMoving) {
-                // Ball is barely moving but still considered moving - force stop
-                this.ball.vx = 0;
-                this.ball.vy = 0;
-                this.ball.isMoving = false;
-
-                if (this.state === 'SHOOTING') {
-                    this.state = 'AIMING';
-                }
-            }
+        // Low threshold so the ball eases to a stop instead of halting abruptly
+        if (Math.hypot(ball.vx, ball.vy) < 0.12) {
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.isMoving = false;
+            this.onBallStopped();
         }
     }
 
-    render() {
+    onBallStopped() {
+        this.state = 'AIMING';
+
+        // Son moqueur: le par est atteint et la balle n'est toujours pas dans le trou
+        if (this.strokeCount === this.parCount) {
+            const mockSounds = ['pourris', 'tunconnard'];
+            AudioManager.playSound(mockSounds[Math.floor(Math.random() * mockSounds.length)]);
+        }
+    }
+
+    render(alpha = 1) {
         // Clear canvas with game background
         this.ctx.fillStyle = '#2E7D32';
         this.ctx.fillRect(0, 0, 1280, 720);
@@ -324,7 +390,7 @@ class Game {
 
         // Render ball at native resolution
         if (this.ball) {
-            this.ball.render(this.ctx, 1);
+            this.ball.render(this.ctx, alpha);
         }
 
         // Render aim line at native resolution

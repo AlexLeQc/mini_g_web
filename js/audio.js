@@ -31,8 +31,12 @@ class AudioManager {
         };
     }
 
+    /**
+     * Returns a Promise<boolean>: false when the browser blocked playback
+     * (autoplay policy: no sound is allowed before the first click/key press).
+     */
     static playMusic(trackName) {
-        if (!this.musicEnabled || !this.audioFiles[trackName]) return;
+        if (!this.musicEnabled || !this.audioFiles[trackName]) return Promise.resolve(true);
 
         if (this.currentMusic && this.currentMusic !== trackName) {
             this.stopMusic();
@@ -41,8 +45,16 @@ class AudioManager {
         if (this.currentMusic !== trackName) {
             this.bgMusic.src = this.audioFiles[trackName];
             this.bgMusic.volume = this.musicVolume * this.masterVolume;
-            this.bgMusic.play().catch(e => console.log('Music play failed:', e));
             this.currentMusic = trackName;
+            return this.bgMusic.play().then(() => true).catch(() => false);
+        }
+        return Promise.resolve(true);
+    }
+
+    /** Retry the current track (call from a click/key handler after a block). */
+    static resumeMusic() {
+        if (this.musicEnabled && this.currentMusic && this.bgMusic.paused) {
+            this.bgMusic.play().catch(() => {});
         }
     }
 
