@@ -12,7 +12,7 @@ Le jeu a été porté en **HTML5/Canvas/JavaScript** pour pouvoir être joué di
 
 1. **Visée** : Cliquez et déplacez la souris pour viser
 2. **Puissance** : Plus vous écartez la souris de la balle, plus le tir est puissant
-3. **Tir** : Appuyez sur la barre d'espace pour frapper la balle
+3. **Tir** : Relâchez le bouton de la souris pour frapper la balle (ou appuyez sur Espace pendant la visée)
 4. **Pause** : Bouton pause disponible à tout moment (même pendant que la balle roule)
 
 ## 🎵 Fonctionnalités

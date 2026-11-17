@@ -2,6 +2,9 @@ class Ball {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        // Position at the previous physics tick (for smooth interpolated drawing)
+        this.prevX = x;
+        this.prevY = y;
         this.vx = 0;
         this.vy = 0;
         this.radius = 8;
@@ -25,25 +28,33 @@ class Ball {
         this.y += this.vy;
     }
 
-    render(ctx, scale = 1) {
+    savePrevious() {
+        this.prevX = this.x;
+        this.prevY = this.y;
+    }
+
+    // alpha (0..1) = how far we are between the previous and current physics tick
+    render(ctx, alpha = 1) {
+        const x = this.prevX + (this.x - this.prevX) * alpha;
+        const y = this.prevY + (this.y - this.prevY) * alpha;
         ctx.save();
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.beginPath();
-        ctx.arc(this.x + 2, this.y + 2, this.radius, 0, Math.PI * 2);
+        ctx.arc(x + 2, y + 2, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#FFFFFF';
         ctx.strokeStyle = '#CCCCCC';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.beginPath();
-        ctx.arc(this.x - 3, this.y - 3, this.radius * 0.3, 0, Math.PI * 2);
+        ctx.arc(x - 3, y - 3, this.radius * 0.3, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
@@ -67,6 +78,8 @@ class Ball {
     reset(x, y) {
         this.x = x;
         this.y = y;
+        this.prevX = x;
+        this.prevY = y;
         this.vx = 0;
         this.vy = 0;
         this.isMoving = false;
