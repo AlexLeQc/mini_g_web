@@ -29,6 +29,15 @@ class AudioManager {
             pourris: 'assets/audio/Pourris.wav',
             tunconnard: 'assets/audio/tUnConnard.wav',
         };
+
+        // Per-sound volume multiplier (1 = normal). The "too many strokes"
+        // taunts are turned down so they sit ~9 dB under the ball/hole sounds
+        // (Pourris.wav is recorded very hot: -3.7 dBFS RMS vs -12 for tUnConnard,
+        // so each gets its own value to end up at about the same loudness).
+        this.soundGain = {
+            pourris: 0.25,
+            tunconnard: 0.6,
+        };
     }
 
     /**
@@ -70,7 +79,8 @@ class AudioManager {
         if (!this.soundEnabled || !this.audioFiles[soundName]) return;
 
         const audio = new Audio(this.audioFiles[soundName]);
-        audio.volume = this.soundVolume * this.masterVolume;
+        const gain = this.soundGain[soundName] ?? 1;
+        audio.volume = Math.min(1, this.soundVolume * this.masterVolume * gain);
         audio.play().catch(e => console.log('Sound play failed:', e));
     }
 
